@@ -1,9 +1,12 @@
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public class ObjectManipulator : MonoBehaviour
 {
+    const int MAX_OBJECTS = 6;
+
     [Header("Objects")]
-    [SerializeField] private Transform[] objects = new Transform[6];
+    [SerializeField] private Transform[] objects = new Transform[MAX_OBJECTS];
 
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 3f;
@@ -16,17 +19,33 @@ public class ObjectManipulator : MonoBehaviour
 
     private Transform selectedObject;
 
+    //Bounding Box
+    [System.Serializable]
+    private struct BoundingBoxData
+    {
+        public Vector3 min;
+        public Vector3 max;
+        public Vector3 center;
+        public Vector3 size;
+    }
+
+    private BoundingBoxData[] boundingBoxes = new BoundingBoxData[MAX_OBJECTS];
+
+
     // Update is called once per frame
     private void Update()
     {
         SelectObject();
 
-        if (selectedObject == null)
-            return;
+        if (selectedObject != null)
+        {
+            MoveObject();
+            RotateObject();
+            ScaleObject();
+        }
 
-        MoveObject();
-        RotateObject();
-        ScaleObject();
+        CalculateBoundingBoxes();
+
     }
 
     private void SelectObject()
@@ -122,4 +141,111 @@ public class ObjectManipulator : MonoBehaviour
 
         selectedObject.localScale = newScale;
     }
+
+
+    private void CalculateBoundingBoxes()
+    {
+        //Recorro cada objeto
+        for (int i = 0; i < MAX_OBJECTS; i++)
+        {
+            if (objects[i] == null)
+            {
+                continue;
+            }
+
+            MeshFilter[] meshFilters = objects[i].GetComponentsInChildren<MeshFilter>();
+
+            bool firstVertex = true;
+
+            Vector3 min = Vector3.zero;
+            Vector3 max = Vector3.zero;
+
+            for (int j = 0; j < meshFilters.Length; j++)
+            {
+                //Me quedo con la mesh
+                Mesh mesh = meshFilters[j].sharedMesh;
+
+                if (mesh == null)
+                {
+                    continue;
+                }
+
+                //Me guardo cada vertice
+                Vector3[] vertices = mesh.vertices;
+
+                //Recorro para sacar el minimo y maximo en cada eje (X, Y, Z)
+                for (int k = 0; k < vertices.Length; k++)
+                {
+                    //Transforma cada vertice de coordenadas locales de la mesh a las globales del mundo
+                    Vector3 worldVertex = meshFilters[j].transform.localToWorldMatrix.MultiplyPoint3x4(vertices[k]);
+
+                    // localToWorldMatrix es una matriz de transformación de 4x4
+                    // que contiene la información para convertir coordenadas locales a coordenadas globales.
+
+                    if (firstVertex)
+                    {
+                        min = worldVertex;
+                        max = worldVertex;
+                        firstVertex = false;
+                    }
+                    else
+                    {
+                        min.x = Mathf.Min(min.x, worldVertex.x);
+                        min.y = Mathf.Min(min.y, worldVertex.y);
+                        min.z = Mathf.Min(min.z, worldVertex.z);
+
+                        max.x = Mathf.Max(max.x, worldVertex.x);
+                        max.y = Mathf.Max(max.y, worldVertex.y);
+                        max.z = Mathf.Max(max.z, worldVertex.z);
+                    }
+                }
+            }
+
+            if (firstVertex)
+            {
+                continue;
+            }
+
+            Vector3 center = (min + max) / 2f;
+            Vector3 size = max - min;
+
+            boundingBoxes[i] = new BoundingBoxData
+            {
+                min = min,
+                max = max,
+                center = center,
+                size = size
+            };
+        }
+    }
+
+    // DIBUJAR BOUNDING BOX CON GIZMOS
+    // - Unity ejecuta OnDrawGizmos() automáticamente.
+    // - Recorremos las Bounding Boxes calculadas.
+    private void OnDrawGizmos()
+    {
+        if (boundingBoxes == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < MAX_OBJECTS; i++)
+        {
+            if (objects == null || objects[i] == null)
+            {
+                continue;
+            }
+
+            Gizmos.color = new Color(0f, 1f, 0f, 0.15f);
+
+            //Dibujar cubo
+            Gizmos.DrawCube(boundingBoxes[i].center, boundingBoxes[i].size);
+
+            Gizmos.color = Color.green;
+
+            //Dibujar bordes del cubo
+            Gizmos.DrawWireCube(boundingBoxes[i].center, boundingBoxes[i].size);
+        }
+    }
+
 }
