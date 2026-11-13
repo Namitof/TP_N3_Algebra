@@ -31,6 +31,13 @@ public class ObjectManipulator : MonoBehaviour
 
     private BoundingBoxData[] boundingBoxes = new BoundingBoxData[MAX_OBJECTS];
 
+    // Datos para la grilla cubica equidistante
+    const int WIDTH = 5;
+    const int HEIGHT = 5;
+    const int DEPTH = 5;
+    const float POINTS_OFFSET = 1.0f;
+    private Vector3[,,] grid = new Vector3[WIDTH, HEIGHT, DEPTH];
+
     private void Start()
     {
         CalculateBoundingBoxes();
