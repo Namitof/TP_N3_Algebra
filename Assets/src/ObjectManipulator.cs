@@ -31,6 +31,10 @@ public class ObjectManipulator : MonoBehaviour
 
     private BoundingBoxData[] boundingBoxes = new BoundingBoxData[MAX_OBJECTS];
 
+    private void Start()
+    {
+        CalculateBoundingBoxes();
+    }
 
     // Update is called once per frame
     private void Update()
@@ -43,9 +47,6 @@ public class ObjectManipulator : MonoBehaviour
             RotateObject();
             ScaleObject();
         }
-
-        CalculateBoundingBoxes();
-
     }
 
     private void SelectObject()
@@ -90,6 +91,8 @@ public class ObjectManipulator : MonoBehaviour
             movement += Vector3.down;
 
         selectedObject.position += movement * (moveSpeed * Time.deltaTime);
+
+        CalculateBoundingBoxes();
     }
 
     private void RotateObject()
@@ -118,6 +121,8 @@ public class ObjectManipulator : MonoBehaviour
             rotation.z -= 1;
 
         selectedObject.Rotate(rotation * (rotationSpeed * Time.deltaTime), Space.World);
+
+        CalculateBoundingBoxes();
     }
 
     private void ScaleObject()
@@ -140,6 +145,9 @@ public class ObjectManipulator : MonoBehaviour
         newScale.z = Mathf.Max(0.1f, newScale.z);
 
         selectedObject.localScale = newScale;
+
+        CalculateBoundingBoxes();
+
     }
 
 
