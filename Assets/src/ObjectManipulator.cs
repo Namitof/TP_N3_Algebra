@@ -57,11 +57,7 @@ public class ObjectManipulator : MonoBehaviour
 
         CalculateBoundingBoxes();
         CalculatePlanes();
-
-        if (testPoint != null)
-        {
-            Debug.Log("Punto dentro del objeto 1: " + IsPointInsideModel(0, testPoint.position));
-        }
+        CheckBoundingBoxCollisions();
     }
 
     // Update is called once per frame
