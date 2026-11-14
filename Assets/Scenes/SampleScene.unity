@@ -544,6 +544,7 @@ MonoBehaviour:
   moveSpeed: 3
   rotationSpeed: 60
   scaleSpeed: 1
+  testPoint: {fileID: 0}
 --- !u!4 &1428024665
 Transform:
   m_ObjectHideFlags: 0
@@ -553,7 +554,7 @@ Transform:
   m_GameObject: {fileID: 1428024663}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.02064, y: 0, z: 19.13869}
+  m_LocalPosition: {x: -7.57, y: 0, z: 13.03}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
