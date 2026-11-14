@@ -17,7 +17,7 @@ public class ObjectManipulator : MonoBehaviour
 
     [Header("Scale")]
     [SerializeField] private float scaleSpeed = 1f;
-
+    [SerializeField] private Transform testPoint;
     private Transform selectedObject;
 
     //Bounding Box
@@ -36,6 +36,7 @@ public class ObjectManipulator : MonoBehaviour
     {
         public Vector3 normal;
         public float d;
+        public Vector3 point;
     }
     //Planos de cada objeto
     private List<PlaneData>[] planes = new List<PlaneData>[MAX_OBJECTS];
@@ -46,7 +47,7 @@ public class ObjectManipulator : MonoBehaviour
     const int DEPTH = 5;
     const float POINTS_OFFSET = 1.0f;
     private Vector3[,,] grid = new Vector3[WIDTH, HEIGHT, DEPTH];
-
+    private string collisionStatus = "";
     private void Start()
     {
         for (int i = 0; i < MAX_OBJECTS; i++)
@@ -56,6 +57,11 @@ public class ObjectManipulator : MonoBehaviour
 
         CalculateBoundingBoxes();
         CalculatePlanes();
+
+        if (testPoint != null)
+        {
+            Debug.Log("Punto dentro del objeto 1: " + IsPointInsideModel(0, testPoint.position));
+        }
     }
 
     // Update is called once per frame
@@ -72,8 +78,9 @@ public class ObjectManipulator : MonoBehaviour
 
         CalculateBoundingBoxes();
         CalculatePlanes();
+        CheckBoundingBoxCollisions();
     }
-    private void SelectObject()
+private void SelectObject()
     {
         for (int i = 0; i < objects.Length; i++)
         {
@@ -308,12 +315,91 @@ public class ObjectManipulator : MonoBehaviour
                         d = -d;
                     }
 
-                    planes[i].Add(new PlaneData { normal = normal, d = d });
+                    Vector3 trianglePoint = (p0 + p1 + p2) / 3f;
+                    planes[i].Add(new PlaneData { normal = normal, d = d, point = trianglePoint });
                 }
             }
-
-            Debug.Log("Objeto " + (i + 1) + " -> planos: " + planes[i].Count);
         }
+    }
+
+    // Devuelve true si el punto esta dentro del modelo del objeto indicado
+    private bool IsPointInsideModel(int objectIndex, Vector3 point)
+    {
+        List<PlaneData> objectPlanes = planes[objectIndex];
+
+        if (objectPlanes == null || objectPlanes.Count == 0)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < objectPlanes.Count; i++)
+        {
+            //Distancia con signo del punto al plano
+            float distance = Vector3.Dot(objectPlanes[i].normal, point) + objectPlanes[i].d;
+
+            //Si esta del lado negativo de algun plano, esta afuera
+            if (distance < 0f)
+            {
+                return false;
+            }
+        }
+
+        //Estuvo del lado positivo de todos los planos
+        return true;
+    }
+
+    // Devuelve true si las bounding boxes de dos objetos se superponen
+    private bool BoundingBoxesOverlap(int indexA, int indexB)
+    {
+        BoundingBoxData a = boundingBoxes[indexA];
+        BoundingBoxData b = boundingBoxes[indexB];
+
+        //Dos cajas se superponen solo si se superponen en LOS TRES ejes
+        bool overlapX = a.min.x <= b.max.x && a.max.x >= b.min.x;
+        bool overlapY = a.min.y <= b.max.y && a.max.y >= b.min.y;
+        bool overlapZ = a.min.z <= b.max.z && a.max.z >= b.min.z;
+
+        return overlapX && overlapY && overlapZ;
+    }
+    private void CheckBoundingBoxCollisions()
+    {
+        collisionStatus = "";
+
+        for (int i = 0; i < MAX_OBJECTS; i++)
+        {
+            if (objects[i] == null) continue;
+
+            //j arranca en i + 1 para no comparar un objeto consigo mismo ni repetir pares (1-2 y 2-1)
+            for (int j = i + 1; j < MAX_OBJECTS; j++)
+            {
+                if (objects[j] == null) continue;
+
+                if (BoundingBoxesOverlap(i, j))
+                {
+                    collisionStatus += "El objeto " + (i + 1) + " y el objeto " + (j + 1) + " colisionan\n";
+                }
+            }
+        }
+
+        if (collisionStatus == "")
+        {
+            collisionStatus = "Sin colision";
+        }
+    }
+    private void OnGUI()
+    {
+        GUIStyle style = new GUIStyle(GUI.skin.label);
+        style.fontSize = 32;
+        style.fontStyle = FontStyle.Bold;
+        style.normal.textColor = Color.yellow;
+
+        float width = 700f;
+        float height = 210f;
+        float x = (Screen.width - width) / 8f;
+        float y = (Screen.height - height) / 8f;
+
+        GUI.Box(new Rect(x, y, width, height), "");
+        GUI.Label(new Rect(x + 10, y + 10, width - 20, height - 20), collisionStatus, style);
     }
 
     // DIBUJAR BOUNDING BOX CON GIZMOS
@@ -342,6 +428,18 @@ public class ObjectManipulator : MonoBehaviour
 
             //Dibujar bordes del cubo
             Gizmos.DrawWireCube(boundingBoxes[i].center, boundingBoxes[i].size);
+
+            if (planes[i] == null)
+            {
+                continue;
+            }
+
+            Gizmos.color = Color.red;
+
+            for (int p = 0; p < planes[i].Count; p++)
+            {
+                Gizmos.DrawRay(planes[i][p].point, planes[i][p].normal * 0.3f);
+            }
         }
     }
 
