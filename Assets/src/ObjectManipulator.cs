@@ -1,6 +1,7 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
-using System.Collections.Generic;
+using static UnityEngine.UI.Image;
 
 public class ObjectManipulator : MonoBehaviour
 {
@@ -42,18 +43,22 @@ public class ObjectManipulator : MonoBehaviour
     private List<PlaneData>[] planes = new List<PlaneData>[MAX_OBJECTS];
 
     // Datos para la grilla cubica equidistante
-    const int WIDTH = 5;
+    const int WIDTH = 15;
     const int HEIGHT = 5;
-    const int DEPTH = 5;
+    const int DEPTH = 15;
     const float POINTS_OFFSET = 1.0f;
     private Vector3[,,] grid = new Vector3[WIDTH, HEIGHT, DEPTH];
+
     private string collisionStatus = "";
+
     private void Start()
     {
         for (int i = 0; i < MAX_OBJECTS; i++)
         {
             planes[i] = new List<PlaneData>();
         }
+
+        InitializeGrid();
 
         CalculateBoundingBoxes();
         CalculatePlanes();
@@ -72,8 +77,8 @@ public class ObjectManipulator : MonoBehaviour
             ScaleObject();
         }
 
-        CalculateBoundingBoxes();
-        CalculatePlanes();
+        CalculateBoundingBoxes(); //Creo que esto no es necesario (se hace al mover o rotar o escalar objeto)
+        CalculatePlanes(); //Lo mismo con esto
         CheckBoundingBoxCollisions();
     }
 private void SelectObject()
@@ -372,7 +377,8 @@ private void SelectObject()
 
                 if (BoundingBoxesOverlap(i, j))
                 {
-                    collisionStatus += "El objeto " + (i + 1) + " y el objeto " + (j + 1) + " colisionan\n";
+                    collisionStatus += "AABB | El objeto " + (i + 1) + " y el objeto " + (j + 1) + " colisionan\n";
+                    CheckCollision(i, j); //Chequear colision completa
                 }
             }
         }
@@ -382,6 +388,25 @@ private void SelectObject()
             collisionStatus = "Sin colision";
         }
     }
+
+    //Chequear colisiones pasando index de 2 modelos
+    private void CheckCollision(int indexA, int indexB)
+    {
+        for (int x = 0; x < WIDTH; x++)
+        {
+            for (int y = 0; y < HEIGHT; y++)
+            {
+                for (int z = 0; z < DEPTH; z++)
+                {
+                    if (IsPointInsideModel(indexA, grid[x, y, z]) && IsPointInsideModel(indexB, grid[x, y, z]))
+                    {
+                        Debug.Log("COLISION EXTACTA ENTRE" + indexA + " Y " + indexB); //No funciona
+                    }
+                }
+            }
+        }
+    }
+
     private void OnGUI()
     {
         GUIStyle style = new GUIStyle(GUI.skin.label);
@@ -396,6 +421,22 @@ private void SelectObject()
 
         GUI.Box(new Rect(x, y, width, height), "");
         GUI.Label(new Rect(x + 10, y + 10, width - 20, height - 20), collisionStatus, style);
+    }
+
+    private void InitializeGrid()
+    {
+        Vector3 origin = transform.position; //Transform del object manipulator
+
+        for (int x = 0; x < WIDTH; x++)
+        {
+            for (int y = 0; y < HEIGHT; y++)
+            {
+                for (int z = 0; z < DEPTH; z++)
+                {
+                    grid[x, y, z] = new Vector3(origin.x + (x * POINTS_OFFSET), origin.y + (y * POINTS_OFFSET), origin.z + (z * POINTS_OFFSET));
+                }
+            }
+        }
     }
 
     // DIBUJAR BOUNDING BOX CON GIZMOS
@@ -435,6 +476,21 @@ private void SelectObject()
             for (int p = 0; p < planes[i].Count; p++)
             {
                 Gizmos.DrawRay(planes[i][p].point, planes[i][p].normal * 0.3f);
+            }
+        }
+
+        //Dibujar puntos de la grilla cubica equidistante
+        Gizmos.color = Color.cyan;
+
+        //Recorrer grilla cubica equidistante
+        for (int x = 0; x < WIDTH; x++)
+        {
+            for (int y = 0; y < HEIGHT; y++)
+            {
+                for (int z = 0; z < DEPTH; z++)
+                {
+                    Gizmos.DrawSphere(grid[x, y, z], 0.05f); //Ultimo parametro es el radio
+                }
             }
         }
     }
