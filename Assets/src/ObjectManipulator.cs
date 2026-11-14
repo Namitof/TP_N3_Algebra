@@ -32,6 +32,7 @@ public class ObjectManipulator : MonoBehaviour
     }
     private BoundingBoxData[] boundingBoxes = new BoundingBoxData[MAX_OBJECTS];
 
+    //Planos de cada objeto
     [System.Serializable]
     private struct PlaneData
     {
@@ -39,12 +40,11 @@ public class ObjectManipulator : MonoBehaviour
         public float d;
         public Vector3 point;
     }
-    //Planos de cada objeto
     private List<PlaneData>[] planes = new List<PlaneData>[MAX_OBJECTS];
 
     // Datos para la grilla cubica equidistante
     const int WIDTH = 15;
-    const int HEIGHT = 5;
+    const int HEIGHT = 15;
     const int DEPTH = 15;
     const float POINTS_OFFSET = 1.0f;
     private Vector3[,,] grid = new Vector3[WIDTH, HEIGHT, DEPTH];
@@ -77,8 +77,6 @@ public class ObjectManipulator : MonoBehaviour
             ScaleObject();
         }
 
-        CalculateBoundingBoxes(); //Creo que esto no es necesario (se hace al mover o rotar o escalar objeto)
-        CalculatePlanes(); //Lo mismo con esto
         CheckBoundingBoxCollisions();
     }
 private void SelectObject()
@@ -125,6 +123,7 @@ private void SelectObject()
         selectedObject.position += movement * (moveSpeed * Time.deltaTime);
 
         CalculateBoundingBoxes();
+        CalculatePlanes();
     }
 
     private void RotateObject()
@@ -155,6 +154,7 @@ private void SelectObject()
         selectedObject.Rotate(rotation * (rotationSpeed * Time.deltaTime), Space.World);
 
         CalculateBoundingBoxes();
+        CalculatePlanes();
     }
 
     private void ScaleObject()
@@ -179,10 +179,13 @@ private void SelectObject()
         selectedObject.localScale = newScale;
 
         CalculateBoundingBoxes();
+        CalculatePlanes();
 
     }
     private void CalculateBoundingBoxes()
     {
+        //https://www.pbr-book.org/3ed-2018/Geometry_and_Transformations/Bounding_Boxes
+
         //Recorro cada objeto
         for (int i = 0; i < MAX_OBJECTS; i++)
         {
@@ -191,6 +194,7 @@ private void SelectObject()
                 continue;
             }
 
+            //MeshFilters -> componente de Unity que contiene una referencia a la geometría (Mesh) del objeto.
             MeshFilter[] meshFilters = objects[i].GetComponentsInChildren<MeshFilter>();
 
             bool firstVertex = true;
@@ -200,7 +204,7 @@ private void SelectObject()
 
             for (int j = 0; j < meshFilters.Length; j++)
             {
-                //Me quedo con la mesh
+                //Me quedo con la mesh (usando sharedMesh)
                 Mesh mesh = meshFilters[j].sharedMesh;
 
                 if (mesh == null)
@@ -216,6 +220,7 @@ private void SelectObject()
                 {
                     //Transforma cada vertice de coordenadas locales de la mesh a las globales del mundo
                     Vector3 worldVertex = meshFilters[j].transform.localToWorldMatrix.MultiplyPoint3x4(vertices[k]);
+                    //MultiplyPoint3x4 -> Rota, escala y traslada un punto en el espacio 3D
 
                     // localToWorldMatrix es una matriz de transformación de 4x4
                     // que contiene la información para convertir coordenadas locales a coordenadas globales.
@@ -258,6 +263,8 @@ private void SelectObject()
     }
     private void CalculatePlanes()
     {
+        //https://aga.frba.utn.edu.ar/ecuaciones-del-plano/
+
         //Recorro cada objeto
         for (int i = 0; i < MAX_OBJECTS; i++)
         {
@@ -290,6 +297,7 @@ private void SelectObject()
                 //Recorro de a 3 indices: cada grupo de 3 es un triangulo
                 for (int k = 0; k < triangles.Length; k += 3)
                 {
+                    //Pasar las coordenadas locales de la malla a las coordenadas globales del mundo.
                     //P0, P1, P2 en coordenadas del mundo
                     Vector3 p0 = localToWorld.MultiplyPoint3x4(vertices[triangles[k]]);
                     Vector3 p1 = localToWorld.MultiplyPoint3x4(vertices[triangles[k + 1]]);
@@ -298,13 +306,25 @@ private void SelectObject()
                     //Normal = producto vectorial de dos aristas
                     Vector3 normal = Vector3.Cross(p1 - p0, p2 - p0);
 
-                    //Si el triangulo es degenerado (area 0), no define un plano
-                    if (normal.sqrMagnitude < 0.000001f)
+                    //Si el triangulo es degenerado (area 0), no define un plano (si la magnitud del vector que representa la normal es cero)
+                    if (normal.magnitude < 0.000001f)
                     {
                         continue;
                     }
 
+                    //Para normalizar divido cada componente del vector por su magnitud
                     normal.Normalize();
+
+                    //Ecuación Normal del Plano -> N . (P - P0) = 0
+                    // N -> Vector normal
+                    // P -> Punto a evaluar
+                    // P0 -> Punto perteneciente al plano
+
+                    //Hago distributiva con N
+                    // (N . P) - (N . P0) = 0
+                    // -N . P0 da siempre un numero fijo -> D
+
+                    // N . P + D = 0
 
                     //D = -(n . P0)
                     float d = -Vector3.Dot(normal, p0);
@@ -316,6 +336,7 @@ private void SelectObject()
                         d = -d;
                     }
 
+                    //Centroide del triángulo (baricentro) para dibujar mas adelante la normal
                     Vector3 trianglePoint = (p0 + p1 + p2) / 3f;
                     planes[i].Add(new PlaneData { normal = normal, d = d, point = trianglePoint });
                 }
@@ -339,7 +360,7 @@ private void SelectObject()
             float distance = Vector3.Dot(objectPlanes[i].normal, point) + objectPlanes[i].d;
 
             //Si esta del lado negativo de algun plano, esta afuera
-            if (distance < 0f)
+            if (distance < 0.000001f)
             {
                 return false;
             }
@@ -352,6 +373,8 @@ private void SelectObject()
     // Devuelve true si las bounding boxes de dos objetos se superponen
     private bool BoundingBoxesOverlap(int indexA, int indexB)
     {
+        //https://developer.mozilla.org/en-US/docs/Games/Techniques/3D_collision_detection
+
         BoundingBoxData a = boundingBoxes[indexA];
         BoundingBoxData b = boundingBoxes[indexB];
 
@@ -400,7 +423,8 @@ private void SelectObject()
                 {
                     if (IsPointInsideModel(indexA, grid[x, y, z]) && IsPointInsideModel(indexB, grid[x, y, z]))
                     {
-                        Debug.Log("COLISION EXTACTA ENTRE" + indexA + " Y " + indexB); //No funciona
+                        Debug.Log("COLISION EXTACTA ENTRE " + (indexA+1) + " Y " + (indexB+1));
+                        collisionStatus = "COLISION EXACTA " + (indexA + 1) + " Y " + (indexB + 1);
                     }
                 }
             }
