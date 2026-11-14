@@ -330,7 +330,7 @@ private void SelectObject()
                     float d = -Vector3.Dot(normal, p0);
 
                     //Si el centro queda del lado negativo, la normal apunta afuera: la invierto
-                    if (Vector3.Dot(normal, center) + d < 0f)
+                    if (Vector3.Dot(normal, center) + d < 0.000001f) //tolerancia o precision
                     {
                         normal = -normal;
                         d = -d;
