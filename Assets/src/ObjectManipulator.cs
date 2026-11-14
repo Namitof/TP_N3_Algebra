@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UIElements;
+using System.Collections.Generic;
 
 public class ObjectManipulator : MonoBehaviour
 {
@@ -28,8 +29,16 @@ public class ObjectManipulator : MonoBehaviour
         public Vector3 center;
         public Vector3 size;
     }
-
     private BoundingBoxData[] boundingBoxes = new BoundingBoxData[MAX_OBJECTS];
+
+    [System.Serializable]
+    private struct PlaneData
+    {
+        public Vector3 normal;
+        public float d;
+    }
+    //Planos de cada objeto
+    private List<PlaneData>[] planes = new List<PlaneData>[MAX_OBJECTS];
 
     // Datos para la grilla cubica equidistante
     const int WIDTH = 5;
@@ -40,7 +49,13 @@ public class ObjectManipulator : MonoBehaviour
 
     private void Start()
     {
+        for (int i = 0; i < MAX_OBJECTS; i++)
+        {
+            planes[i] = new List<PlaneData>();
+        }
+
         CalculateBoundingBoxes();
+        CalculatePlanes();
     }
 
     // Update is called once per frame
@@ -54,8 +69,10 @@ public class ObjectManipulator : MonoBehaviour
             RotateObject();
             ScaleObject();
         }
-    }
 
+        CalculateBoundingBoxes();
+        CalculatePlanes();
+    }
     private void SelectObject()
     {
         for (int i = 0; i < objects.Length; i++)
@@ -156,8 +173,6 @@ public class ObjectManipulator : MonoBehaviour
         CalculateBoundingBoxes();
 
     }
-
-
     private void CalculateBoundingBoxes()
     {
         //Recorro cada objeto
@@ -231,6 +246,73 @@ public class ObjectManipulator : MonoBehaviour
                 center = center,
                 size = size
             };
+        }
+    }
+    private void CalculatePlanes()
+    {
+        //Recorro cada objeto
+        for (int i = 0; i < MAX_OBJECTS; i++)
+        {
+            if (objects[i] == null)
+            {
+                continue;
+            }
+
+            //Vacio la lista: los planos viejos ya no sirven porque el objeto se pudo mover
+            planes[i].Clear();
+
+            //Uso el centro de la bounding box como "centro del modelo"
+            Vector3 center = boundingBoxes[i].center;
+
+            MeshFilter[] meshFilters = objects[i].GetComponentsInChildren<MeshFilter>();
+
+            for (int j = 0; j < meshFilters.Length; j++)
+            {
+                Mesh mesh = meshFilters[j].sharedMesh;
+
+                if (mesh == null)
+                {
+                    continue;
+                }
+
+                Vector3[] vertices = mesh.vertices;
+                int[] triangles = mesh.triangles;
+                Matrix4x4 localToWorld = meshFilters[j].transform.localToWorldMatrix;
+
+                //Recorro de a 3 indices: cada grupo de 3 es un triangulo
+                for (int k = 0; k < triangles.Length; k += 3)
+                {
+                    //P0, P1, P2 en coordenadas del mundo
+                    Vector3 p0 = localToWorld.MultiplyPoint3x4(vertices[triangles[k]]);
+                    Vector3 p1 = localToWorld.MultiplyPoint3x4(vertices[triangles[k + 1]]);
+                    Vector3 p2 = localToWorld.MultiplyPoint3x4(vertices[triangles[k + 2]]);
+
+                    //Normal = producto vectorial de dos aristas
+                    Vector3 normal = Vector3.Cross(p1 - p0, p2 - p0);
+
+                    //Si el triangulo es degenerado (area 0), no define un plano
+                    if (normal.sqrMagnitude < 0.000001f)
+                    {
+                        continue;
+                    }
+
+                    normal.Normalize();
+
+                    //D = -(n . P0)
+                    float d = -Vector3.Dot(normal, p0);
+
+                    //Si el centro queda del lado negativo, la normal apunta afuera: la invierto
+                    if (Vector3.Dot(normal, center) + d < 0f)
+                    {
+                        normal = -normal;
+                        d = -d;
+                    }
+
+                    planes[i].Add(new PlaneData { normal = normal, d = d });
+                }
+            }
+
+            Debug.Log("Objeto " + (i + 1) + " -> planos: " + planes[i].Count);
         }
     }
 
