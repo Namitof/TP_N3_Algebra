@@ -264,6 +264,49 @@ public class ObjectManipulator : MonoBehaviour
         }
     }
 
+    private void AddPlaneIfNotExists(List<PlaneData> objectPlanes, PlaneData newPlane)
+    {
+        //Planos Coplanares -> cuando 2 planos ocupan exactamente la misma superficie.
+
+        const float NORMAL_EPSILON = 0.0001f;
+        const float DISTANCE_EPSILON = 0.0001f;
+
+        foreach (PlaneData plane in objectPlanes)
+        {
+            //Producto punto repaso -> el producto punto indica el ángulo entre los vectores multiplicado por sus magnitudes
+            // A . B = |A| . |B| . cos(anguloEntreVectoresAyB)
+            // |A| -> Magnitud de a
+            // |B| -> Magnitud de b
+
+            //Ver si las normales son paralelas -> Dos vectores son paralelos cuando apuntan en la misma dirección o en direcciones opuestas.
+            //Perpendicular -> Dos vectores son perpendiculares cuando forman un ángulo de 90° entre sí.
+
+            //Hago producto punto
+            //Si el resultado es cercano a 1 o a -1, las normales son paralelas. (si los vectores estan normalizados -> magnitud 1)
+            //Si el resultado es cercano a 0, las normales son perpendiculares.
+            float normalDot = Vector3.Dot(plane.normal, newPlane.normal);
+
+            if (Mathf.Abs(normalDot) < 1f - NORMAL_EPSILON) //Si las normales no son paralelas
+            {
+                continue;
+            }
+
+            //Ver si el punto del nuevo plano pertenece al existente
+            //Si el resultado está cerca de cero, el punto pertenece al plano (considerando una tolerancia).
+            //Por la formula -> N . P + D = 0
+            float distance = Vector3.Dot(plane.normal, newPlane.point) + plane.d;
+
+            if (Mathf.Abs(distance) < DISTANCE_EPSILON)
+            {
+                //Los planos son coplanares, no necesito agregarlo
+                return;
+            }
+        }
+
+        //Si no encontré ningún plano coplanar, lo agrego
+        objectPlanes.Add(newPlane);
+    }
+
     private void CalculatePlanes()
     {
         //https://aga.frba.utn.edu.ar/ecuaciones-del-plano/
@@ -341,7 +384,10 @@ public class ObjectManipulator : MonoBehaviour
 
                     //Centroide del triángulo (baricentro) para dibujar mas adelante la normal
                     Vector3 trianglePoint = (p0 + p1 + p2) / 3f;
-                    planes[i].Add(new PlaneData { normal = normal, d = d, point = trianglePoint });
+                    //planes[i].Add(new PlaneData { normal = normal, d = d, point = trianglePoint });
+
+                    PlaneData newPlane = new PlaneData { normal = normal, d=d, point = trianglePoint };
+                    AddPlaneIfNotExists(planes[i], newPlane);
                 }
             }
         }
