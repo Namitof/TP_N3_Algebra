@@ -79,7 +79,8 @@ public class ObjectManipulator : MonoBehaviour
 
         CheckBoundingBoxCollisions();
     }
-private void SelectObject()
+
+    private void SelectObject()
     {
         for (int i = 0; i < objects.Length; i++)
         {
@@ -182,6 +183,7 @@ private void SelectObject()
         CalculatePlanes();
 
     }
+
     private void CalculateBoundingBoxes()
     {
         //https://www.pbr-book.org/3ed-2018/Geometry_and_Transformations/Bounding_Boxes
@@ -261,6 +263,7 @@ private void SelectObject()
             };
         }
     }
+
     private void CalculatePlanes()
     {
         //https://aga.frba.utn.edu.ar/ecuaciones-del-plano/
@@ -385,6 +388,7 @@ private void SelectObject()
 
         return overlapX && overlapY && overlapZ;
     }
+
     private void CheckBoundingBoxCollisions()
     {
         collisionStatus = "";
@@ -423,7 +427,7 @@ private void SelectObject()
                 {
                     if (IsPointInsideModel(indexA, grid[x, y, z]) && IsPointInsideModel(indexB, grid[x, y, z]))
                     {
-                        Debug.Log("COLISION EXTACTA ENTRE " + (indexA+1) + " Y " + (indexB+1));
+                        Debug.Log("COLISION EXTACTA ENTRE " + (indexA + 1) + " Y " + (indexB + 1));
                         collisionStatus = "COLISION EXACTA " + (indexA + 1) + " Y " + (indexB + 1);
                     }
                 }
