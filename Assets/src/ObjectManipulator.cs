@@ -307,7 +307,7 @@ private void SelectObject()
                     Vector3 normal = Vector3.Cross(p1 - p0, p2 - p0);
 
                     //Si el triangulo es degenerado (area 0), no define un plano (si la magnitud del vector que representa la normal es cero)
-                    if (normal.magnitude < 0.000001f)
+                    if (normal.magnitude < 0.001f)
                     {
                         continue;
                     }
