@@ -490,6 +490,7 @@ private void SelectObject()
             //Dibujar bordes del cubo
             Gizmos.DrawWireCube(boundingBoxes[i].center, boundingBoxes[i].size);
 
+            //Dibujar normales
             if (planes[i] == null)
             {
                 continue;
