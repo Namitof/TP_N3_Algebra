@@ -337,7 +337,7 @@ public class ObjectManipulator : MonoBehaviour
                 }
 
                 Vector3[] vertices = mesh.vertices;
-                int[] triangles = mesh.triangles;
+                int[] triangles = mesh.triangles; //Los indices de los vertices que forman cada triangulo
                 Matrix4x4 localToWorld = meshFilters[j].transform.localToWorldMatrix;
 
                 //Recorro de a 3 indices: cada grupo de 3 es un triangulo
