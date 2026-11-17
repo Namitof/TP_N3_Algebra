@@ -18,7 +18,6 @@ public class ObjectManipulator : MonoBehaviour
 
     [Header("Scale")]
     [SerializeField] private float scaleSpeed = 1f;
-    [SerializeField] private Transform testPoint;
     private Transform selectedObject;
 
     //Bounding Box
@@ -48,8 +47,6 @@ public class ObjectManipulator : MonoBehaviour
     const int DEPTH = 15;
     const float POINTS_OFFSET = 1.0f;
     private Vector3[,,] grid = new Vector3[WIDTH, HEIGHT, DEPTH];
-
-    private string collisionStatus = "";
 
     private void Start()
     {
@@ -432,13 +429,16 @@ public class ObjectManipulator : MonoBehaviour
         bool overlapY = a.min.y <= b.max.y && a.max.y >= b.min.y;
         bool overlapZ = a.min.z <= b.max.z && a.max.z >= b.min.z;
 
+        if (overlapX && overlapY && overlapZ)
+        {
+            Debug.Log("Bounding box colisionando: " + (indexA + 1) + " y " + (indexB + 1));
+        }
+
         return overlapX && overlapY && overlapZ;
     }
 
     private void CheckBoundingBoxCollisions()
     {
-        collisionStatus = "";
-
         for (int i = 0; i < MAX_OBJECTS; i++)
         {
             if (objects[i] == null) continue;
@@ -450,15 +450,9 @@ public class ObjectManipulator : MonoBehaviour
 
                 if (BoundingBoxesOverlap(i, j))
                 {
-                    collisionStatus += "AABB | El objeto " + (i + 1) + " y el objeto " + (j + 1) + " colisionan\n";
                     CheckCollision(i, j); //Chequear colision completa
                 }
             }
-        }
-
-        if (collisionStatus == "")
-        {
-            collisionStatus = "Sin colision";
         }
     }
 
@@ -474,27 +468,10 @@ public class ObjectManipulator : MonoBehaviour
                     if (IsPointInsideModel(indexA, grid[x, y, z]) && IsPointInsideModel(indexB, grid[x, y, z]))
                     {
                         Debug.Log("COLISION EXTACTA ENTRE " + (indexA + 1) + " Y " + (indexB + 1));
-                        collisionStatus = "COLISION EXACTA " + (indexA + 1) + " Y " + (indexB + 1);
                     }
                 }
             }
         }
-    }
-
-    private void OnGUI()
-    {
-        GUIStyle style = new GUIStyle(GUI.skin.label);
-        style.fontSize = 32;
-        style.fontStyle = FontStyle.Bold;
-        style.normal.textColor = Color.yellow;
-
-        float width = 700f;
-        float height = 210f;
-        float x = (Screen.width - width) / 8f;
-        float y = (Screen.height - height) / 8f;
-
-        GUI.Box(new Rect(x, y, width, height), "");
-        GUI.Label(new Rect(x + 10, y + 10, width - 20, height - 20), collisionStatus, style);
     }
 
     private void InitializeGrid()
@@ -569,5 +546,4 @@ public class ObjectManipulator : MonoBehaviour
             }
         }
     }
-
 }
