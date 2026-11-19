@@ -351,10 +351,10 @@ public class ObjectManipulator : MonoBehaviour
                         continue;
                     }
 
-                    //Para normalizar divido cada componente del vector por su magnitud
+                    //Para normalizar divido cada componente del vector por su magnitud -> x / |n| , y / |n| , z / |n|
                     normal.Normalize();
 
-                    //Ecuación Normal del Plano -> N . (P - P0) = 0
+                    //Ecuación Normal del Plano (forma vectorial) -> N . (P - P0) = 0 
                     // N -> Vector normal
                     // P -> Punto a evaluar
                     // P0 -> Punto perteneciente al plano
@@ -365,8 +365,20 @@ public class ObjectManipulator : MonoBehaviour
 
                     // N . P + D = 0
 
-                    //D = -(n . P0)
+                    //D = -(n . P0) //D -> término independiente que resume el desplazamiento del plano respecto al origen.
                     float d = -Vector3.Dot(normal, p0);
+
+                    //Producto punto (o escalar) //POR COMPONENTES
+                    //V1 -> (x1, y1, z1)
+                    //V2 -> (x2, y2, z2)
+                    //V1 . V2 = x1.x2 + y1.y2 + z1.z2
+
+                    //Producto punto (o escalar) //Fórmula geométrica
+                    //V1 -> |V1| = magnitud
+                    //V2 -> |V2| = magnitud
+                    //V1 . V2 = |V1| . |V2| . cos (angulo entre vectores)
+
+                    //https://aga.frba.utn.edu.ar/vectores-en-r3/ -> REPASO VECTORES
 
                     //Si el centro queda del lado negativo, la normal apunta afuera: la invierto
                     if (Vector3.Dot(normal, center) + d < 0.000001f) //tolerancia o precision
@@ -375,11 +387,11 @@ public class ObjectManipulator : MonoBehaviour
                         d = -d;
                     }
 
-                    //Centroide del triángulo (baricentro) para dibujar mas adelante la normal
+                    //Centroide del triángulo (baricentro) para dibujar mas adelante la normal //https://www.universoformulas.com/matematicas/geometria/baricentro-triangulo/
                     Vector3 trianglePoint = (p0 + p1 + p2) / 3f;
                     //planes[i].Add(new PlaneData { normal = normal, d = d, point = trianglePoint });
 
-                    PlaneData newPlane = new PlaneData { normal = normal, d=d, point = trianglePoint };
+                    PlaneData newPlane = new PlaneData { normal = normal, d = d, point = trianglePoint };
                     AddPlaneIfNotExists(planes[i], newPlane);
                 }
             }
