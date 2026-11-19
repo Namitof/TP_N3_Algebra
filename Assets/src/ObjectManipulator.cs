@@ -1,7 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UIElements;
-using static UnityEngine.UI.Image;
 
 public class ObjectManipulator : MonoBehaviour
 {
@@ -281,7 +279,7 @@ public class ObjectManipulator : MonoBehaviour
             //Si el resultado es cercano a 0, las normales son perpendiculares.
             float normalDot = Vector3.Dot(plane.normal, newPlane.normal);
 
-            if (Mathf.Abs(normalDot) < 1f - NORMAL_EPSILON) //Si las normales no son paralelas
+            if (Mathf.Abs(normalDot) < 1f - NORMAL_EPSILON) //Si las normales no son paralelas -> tengo que agregar el plano (pasar a siguiente iteracion)
             {
                 continue;
             }
