@@ -21,7 +21,6 @@ public class ObjectManipulator : MonoBehaviour
     private Transform selectedObject;
 
     //Bounding Box
-    [System.Serializable]
     private struct BoundingBoxData
     {
         public Vector3 min;
@@ -32,7 +31,6 @@ public class ObjectManipulator : MonoBehaviour
     private BoundingBoxData[] boundingBoxes = new BoundingBoxData[MAX_OBJECTS];
 
     //Planos de cada objeto
-    [System.Serializable]
     private struct PlaneData
     {
         public Vector3 normal;
