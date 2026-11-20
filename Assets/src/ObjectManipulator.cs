@@ -213,12 +213,16 @@ public class ObjectManipulator : MonoBehaviour
                 //Recorro para sacar el minimo y maximo en cada eje (X, Y, Z)
                 for (int k = 0; k < vertices.Length; k++)
                 {
-                    //Transforma cada vertice de coordenadas locales de la mesh a las globales del mundo
+                    //Transforma un vértice desde las coordenadas locales de la Mesh
+                    //hacia las coordenadas globales del mundo.
                     Vector3 worldVertex = meshFilters[j].transform.localToWorldMatrix.MultiplyPoint3x4(vertices[k]);
-                    //MultiplyPoint3x4 -> Rota, escala y traslada un punto en el espacio 3D
+                    // MultiplyPoint3x4 -> Multiplica la matriz de transformación por un punto 3D,
+                    // aplicando traslación, rotación y escala.
 
-                    // localToWorldMatrix es una matriz de transformación de 4x4
-                    // que contiene la información para convertir coordenadas locales a coordenadas globales.
+                    // localToWorldMatrix -> Es una matriz de transformación 4x4
+                    // que permite convertir posiciones del espacio local al espacio global.
+                    // Tiene en cuenta la posición, rotación y escala del objeto,
+                    // incluyendo las transformaciones heredadas de sus padres.
 
                     if (firstVertex)
                     {
@@ -410,7 +414,7 @@ public class ObjectManipulator : MonoBehaviour
 
         for (int i = 0; i < objectPlanes.Count; i++)
         {
-            //Distancia con signo del punto al plano
+            //Distancia con signo del punto al plano // N . P + D = 0
             float distance = Vector3.Dot(objectPlanes[i].normal, point) + objectPlanes[i].d;
 
             //Si esta del lado negativo de algun plano, esta afuera
